@@ -1,0 +1,17 @@
+set(TL_LIB_NAME "TelemetryLoaderLib")
+set(TL_LIB_HEADERS "${TL_LIB_NAME}_HEADERS")
+set(TL_LIB_SOURCES "${TL_LIB_NAME}_SOURCES")
+
+file(GLOB_RECURSE TL_LIB_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
+file(GLOB_RECURSE TL_LIB_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+
+add_library(${TL_LIB_NAME} ${TL_LIB_SOURCES} ${TL_LIB_HEADERS})
+add_library(${PROJECT_NAME}::${TL_LIB_NAME} ALIAS ${TL_LIB_NAME})
+
+set_target_properties(${TL_LIB_NAME} PROPERTIES
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS OFF)
+
+target_link_libraries(${TL_LIB_NAME} PRIVATE ${PROJECT_NAME}_ProjectSettings)
+target_include_directories(${TL_LIB_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
