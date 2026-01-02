@@ -1,18 +1,24 @@
-#include <QGuiApplication>
-#include <QQmlContext>
-#include <QQmlApplicationEngine>
+#include <fstream>
+#include <iostream>
 
-#include <Core/Core.hpp>
+#include <TelemetryViewer/Telemetry/TelemetryParser.hpp>
+
+using namespace TelemetryViewer;
 
 int main(int argc, char* argv[])
 {
-    QGuiApplication application(argc, argv);
-    QQmlApplicationEngine engine;
-    Core core;
+    const std::string telemetryFilename = "Data.txt";
+    std::ifstream telemetryFile { telemetryFilename };
 
-    engine.rootContext()->setContextProperty(QStringLiteral("core"), &core);
-    engine.addImportPath(QStringLiteral("qrc:/"));
-    engine.load(QStringLiteral("qrc:/main.qml"));
+    if (!telemetryFile.is_open())
+    {
+        std::cerr << "[main]: failed to open file \"" << telemetryFilename << "\". Exiting..." << std::endl;
+        return 1;
+    }
 
-    return application.exec();
+    const Telemetry telemetry = ParseTelemetry(telemetryFile);
+
+    std::cout << telemetry.metadata.index << '\n';
+    std::cout << telemetry.metadata.unit << '\n';
+    std::cout << telemetry.metadata.name << std::endl;
 }

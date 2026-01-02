@@ -1,19 +1,14 @@
 set(EXECUTABLE_NAME "${PROJECT_NAME}")
 
-add_subdirectory(TelemetryLoader)
-add_subdirectory(Core)
-add_subdirectory(View)
+add_subdirectory(Telemetry)
 
-add_executable(${EXECUTABLE_NAME} main.cpp "${VIEW_RESOURCES_FILEPATH}")
+add_executable(${EXECUTABLE_NAME} main.cpp)
 
 set_target_properties(${EXECUTABLE_NAME} PROPERTIES
-        CXX_STANDARD 20
+        CXX_STANDARD 23
         CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS OFF
-        AUTORCC ON)
+        CXX_EXTENSIONS OFF)
 
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE
-        ${PROJECT_NAME}::CoreLib
-        ${PROJECT_NAME}_ProjectSettings
-        Qt5::Gui
-        Qt5::Qml)
+        ${PROJECT_NAME}::TelemetryLib
+        ${PROJECT_NAME}_ProjectSettings)
