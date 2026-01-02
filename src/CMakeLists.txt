@@ -5,7 +5,7 @@ add_subdirectory(Telemetry)
 add_executable(${EXECUTABLE_NAME} main.cpp)
 
 set_target_properties(${EXECUTABLE_NAME} PROPERTIES
-        CXX_STANDARD 20
+        CXX_STANDARD 17
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS OFF)
 

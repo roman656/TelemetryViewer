@@ -19,6 +19,8 @@ void ConfigureCliParser(CLI::App& cliParser)
 
 }
 
+
+
 int main(int argc, char* argv[])
 {
     std::filesystem::path telemetryFilePath;
