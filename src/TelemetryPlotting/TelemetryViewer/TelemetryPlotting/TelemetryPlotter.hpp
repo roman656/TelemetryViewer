@@ -1,0 +1,16 @@
+#ifndef TELEMETRYVIEWER_TELEMETRYPLOTTING_TELEMETRYPLOTTER_HPP
+#define TELEMETRYVIEWER_TELEMETRYPLOTTING_TELEMETRYPLOTTER_HPP
+
+#include <TelemetryViewer/Telemetry/Telemetry.hpp>
+
+namespace TelemetryViewer
+{
+
+class TelemetryPlotter final
+{
+
+};
+
+}
+
+#endif // TELEMETRYVIEWER_TELEMETRYPLOTTING_TELEMETRYPLOTTER_HPP

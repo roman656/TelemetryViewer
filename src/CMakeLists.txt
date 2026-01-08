@@ -1,6 +1,7 @@
 set(EXECUTABLE_NAME "${PROJECT_NAME}")
 
 add_subdirectory(Telemetry)
+add_subdirectory(TelemetryPlotting)
 
 add_executable(${EXECUTABLE_NAME} main.cpp)
 
@@ -11,7 +12,7 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
 
 include(AddCLI11)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE
-        ${PROJECT_NAME}::TelemetryLib
+        ${PROJECT_NAME}::TelemetryPlottingLib
         ${PROJECT_NAME}_ProjectSettings
         CLI11::CLI11)
 
