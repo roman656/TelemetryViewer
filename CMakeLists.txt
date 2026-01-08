@@ -10,4 +10,6 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(NoInSourceBuilds)
 include(ProjectSettings)
 
+find_package(Qt6 COMPONENTS Widgets PrintSupport REQUIRED)
+
 add_subdirectory(src)

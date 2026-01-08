@@ -46,9 +46,5 @@ int main(int argc, char* argv[])
 
     const Telemetry telemetry = ParseTelemetry(telemetryFile);
 
-    std::cout << telemetry.metadata.index << '\n';
-    std::cout << telemetry.metadata.unit << '\n';
-    std::cout << telemetry.metadata.name << std::endl;
-
     PlotTelemetry(telemetry);
 }
