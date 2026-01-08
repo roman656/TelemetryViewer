@@ -1,13 +1,13 @@
 #include <TelemetryViewer/TelemetryPlotting/TelemetryPlotter.hpp>
 
 #include <algorithm>
+#include <cstdint>
 #include <limits>
-#include <memory>
 
 #include <QApplication>
 #include <QBrush>
 #include <QColor>
-#include <QCoreApplication>
+#include <QDateTime>
 #include <QFont>
 #include <QMainWindow>
 #include <QPen>
@@ -19,26 +19,6 @@ using namespace TelemetryViewer;
 
 namespace
 {
-
-struct PlotRanges final
-{
-    double minX = std::numeric_limits<double>::max();
-    double maxX = std::numeric_limits<double>::lowest();
-    double minY = std::numeric_limits<double>::max();
-    double maxY = std::numeric_limits<double>::lowest();
-    bool hasData = false;
-};
-
-
-
-struct PlotFonts final
-{
-    QFont axisLabel;
-    QFont tickLabel;
-    QFont title;
-};
-
-
 
 [[nodiscard]]
 QFont IncreaseFontSize(QFont font, int pointDelta, int pixelDelta)
@@ -52,23 +32,6 @@ QFont IncreaseFontSize(QFont font, int pointDelta, int pixelDelta)
         font.setPixelSize(font.pixelSize() + pixelDelta);
     }
     return font;
-}
-
-
-
-[[nodiscard]]
-std::unique_ptr<QApplication> CreateApplicationIfNeeded()
-{
-    if (QCoreApplication::instance() != nullptr)
-    {
-        return nullptr;
-    }
-
-    static int argc = 1;
-    static char appName[] = "TelemetryViewer";
-    static char* argv[] = { appName, nullptr };
-
-    return std::make_unique<QApplication>(argc, argv);
 }
 
 
@@ -107,14 +70,6 @@ QString BuildYAxisLabel(const TelemetryMetadata& metadata)
 
 
 
-void UpdateRange(double value, double& minValue, double& maxValue)
-{
-    minValue = std::min(minValue, value);
-    maxValue = std::max(maxValue, value);
-}
-
-
-
 void ExpandRange(double& minValue, double& maxValue)
 {
     if (minValue == maxValue)
@@ -131,136 +86,54 @@ void ExpandRange(double& minValue, double& maxValue)
 
 
 
-[[nodiscard]]
-PlotFonts BuildFonts(QCustomPlot* plot)
+bool FillSeriesData(const Telemetry& telemetry, QVector<double>& xValues, QVector<double>& yValues,
+                    double& minX, double& maxX, double& minY, double& maxY)
 {
-    PlotFonts fonts;
-    fonts.axisLabel = IncreaseFontSize(plot->xAxis->labelFont(), 3, 6);
-    fonts.tickLabel = IncreaseFontSize(plot->xAxis->tickLabelFont(), 2, 4);
-    fonts.title = QFont(QStringLiteral("Sans Serif"), 15, QFont::Bold);
-
-    return fonts;
-}
-
-
-
-[[nodiscard]]
-PlotRanges BuildSeriesData(const Telemetry& telemetry, QVector<double>& xValues, QVector<double>& yValues)
-{
-    PlotRanges ranges;
     const std::size_t sampleCount = telemetry.entries.size();
+    if (sampleCount == 0)
+    {
+        return false;
+    }
 
     xValues.reserve(static_cast<int>(sampleCount));
     yValues.reserve(static_cast<int>(sampleCount));
 
+    QDateTime baseTime;
+    std::uint64_t baseTimestamp = 0;
+    bool baseTimeValid = false;
+
     for (const auto& entry : telemetry.entries)
     {
-        const double x = static_cast<double>(entry.timestamp);
+        QDateTime entryTime = QDateTime::fromString(QString::fromStdString(entry.timeString),
+                                                    QStringLiteral("yyyy.MM.dd HH:mm:ss.zzz"));
+
+        if (!baseTimeValid && entryTime.isValid())
+        {
+            baseTime = entryTime;
+            baseTimestamp = entry.timestamp;
+            baseTimeValid = true;
+        }
+
+        if (!entryTime.isValid() && baseTimeValid)
+        {
+            entryTime = baseTime.addMSecs(static_cast<qint64>(entry.timestamp - baseTimestamp));
+        }
+
+        const double x = entryTime.isValid()
+                ? static_cast<double>(entryTime.toMSecsSinceEpoch()) / 1000.0
+                : static_cast<double>(entry.timestamp) / 1000.0;
         const double y = entry.value;
 
         xValues.push_back(x);
         yValues.push_back(y);
 
-        UpdateRange(x, ranges.minX, ranges.maxX);
-        UpdateRange(y, ranges.minY, ranges.maxY);
+        minX = std::min(minX, x);
+        maxX = std::max(maxX, x);
+        minY = std::min(minY, y);
+        maxY = std::max(maxY, y);
     }
 
-    ranges.hasData = (sampleCount > 0);
-    return ranges;
-}
-
-
-
-void ConfigureGraph(QCustomPlot* plot, const TelemetryMetadata& metadata,
-                    const QVector<double>& xValues, const QVector<double>& yValues)
-{
-    plot->addGraph();
-    plot->graph(0)->setData(xValues, yValues);
-    plot->graph(0)->setLineStyle(QCPGraph::lsLine);
-    plot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 4));
-    plot->graph(0)->setAdaptiveSampling(true);
-    plot->graph(0)->setName(metadata.index.empty()
-            ? QStringLiteral("index")
-            : QString::fromStdString(metadata.index));
-}
-
-
-
-void ConfigureAxes(QCustomPlot* plot, const TelemetryMetadata& metadata, const PlotFonts& fonts)
-{
-    plot->xAxis->setLabel(QStringLiteral("timestamp [ms]"));
-    plot->yAxis->setLabel(BuildYAxisLabel(metadata));
-
-    plot->xAxis->setLabelFont(fonts.axisLabel);
-    plot->yAxis->setLabelFont(fonts.axisLabel);
-    plot->xAxis->setTickLabelFont(fonts.tickLabel);
-    plot->yAxis->setTickLabelFont(fonts.tickLabel);
-    plot->xAxis->setTickLabelRotation(45.0);
-
-    auto xTicker = QSharedPointer<QCPAxisTicker>(new QCPAxisTicker);
-    xTicker->setTickCount(12);
-    plot->xAxis->setTicker(xTicker);
-
-    auto yTicker = QSharedPointer<QCPAxisTicker>(new QCPAxisTicker);
-    yTicker->setTickCount(12);
-    plot->yAxis->setTicker(yTicker);
-}
-
-
-
-void ConfigureLegend(QCustomPlot* plot, const QFont& font)
-{
-    if (!plot->legend)
-    {
-        return;
-    }
-
-    plot->legend->setVisible(true);
-    plot->legend->setBorderPen(QPen(QColor(30, 30, 30, 200), 1));
-    plot->legend->setBrush(QBrush(QColor(255, 255, 255, 240)));
-    plot->legend->setFont(font);
-    plot->legend->setIconSize(26, 12);
-    plot->legend->setIconTextPadding(8);
-    plot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignTop | Qt::AlignRight);
-}
-
-
-
-void ConfigureTitle(QCustomPlot* plot, const TelemetryMetadata& metadata, const QFont& font)
-{
-    plot->plotLayout()->insertRow(0);
-    plot->plotLayout()->addElement(0, 0, new QCPTextElement(plot, BuildTitle(metadata), font));
-}
-
-
-
-void ConfigureInteractions(QCustomPlot* plot)
-{
-    plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
-    plot->axisRect()->setRangeDrag(Qt::Horizontal | Qt::Vertical);
-    plot->axisRect()->setRangeZoom(Qt::Horizontal | Qt::Vertical);
-}
-
-
-
-void ApplyRanges(QCustomPlot* plot, const PlotRanges& ranges)
-{
-    if (ranges.hasData)
-    {
-        double minX = ranges.minX;
-        double maxX = ranges.maxX;
-        double minY = ranges.minY;
-        double maxY = ranges.maxY;
-
-        ExpandRange(minX, maxX);
-        ExpandRange(minY, maxY);
-        plot->xAxis->setRange(minX, maxX);
-        plot->yAxis->setRange(minY, maxY);
-        return;
-    }
-
-    plot->xAxis->setRange(0.0, 1.0);
-    plot->yAxis->setRange(0.0, 1.0);
+    return true;
 }
 
 }
@@ -268,39 +141,85 @@ void ApplyRanges(QCustomPlot* plot, const PlotRanges& ranges)
 
 void TelemetryViewer::PlotTelemetry(const Telemetry& telemetry)
 {
-    std::unique_ptr<QApplication> ownedApp = CreateApplicationIfNeeded();
+    int argc = 1;
+    char appName[] = "TelemetryViewer";
+    char* argv[] = { appName, nullptr };
+    QApplication app(argc, argv);
 
-    auto* window = new QMainWindow();
-    window->setAttribute(Qt::WA_DeleteOnClose);
-    const QString appTitle = QCoreApplication::applicationName().isEmpty()
-            ? QStringLiteral("TelemetryViewer")
-            : QCoreApplication::applicationName();
-    window->setWindowTitle(appTitle);
+    QMainWindow window;
+    window.setWindowTitle(QStringLiteral("TelemetryViewer"));
 
-    auto* plot = new QCustomPlot(window);
+    auto* plot = new QCustomPlot(&window);
+    window.setCentralWidget(plot);
+    window.resize(1200, 700);
+
     QVector<double> xValues;
     QVector<double> yValues;
+    double minX = std::numeric_limits<double>::max();
+    double maxX = std::numeric_limits<double>::lowest();
+    double minY = std::numeric_limits<double>::max();
+    double maxY = std::numeric_limits<double>::lowest();
+    const bool hasData = FillSeriesData(telemetry, xValues, yValues, minX, maxX, minY, maxY);
 
-    const PlotFonts fonts = BuildFonts(plot);
-    const PlotRanges ranges = BuildSeriesData(telemetry, xValues, yValues);
+    plot->addGraph();
+    plot->graph(0)->setData(xValues, yValues);
+    plot->graph(0)->setLineStyle(QCPGraph::lsLine);
+    plot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 4));
+    plot->graph(0)->setAdaptiveSampling(true);
+    plot->graph(0)->setName(telemetry.metadata.index.empty()
+            ? QStringLiteral("index")
+            : QString::fromStdString(telemetry.metadata.index));
 
-    ConfigureGraph(plot, telemetry.metadata, xValues, yValues);
-    ConfigureAxes(plot, telemetry.metadata, fonts);
-    ConfigureInteractions(plot);
-    ConfigureLegend(plot, fonts.axisLabel);
-    ConfigureTitle(plot, telemetry.metadata, fonts.title);
-    ApplyRanges(plot, ranges);
+    plot->xAxis->setLabel(QStringLiteral("timestamp"));
+    plot->yAxis->setLabel(BuildYAxisLabel(telemetry.metadata));
 
-    window->setCentralWidget(plot);
-    window->resize(1200, 700);
-    window->show();
+    QFont axisLabelFont = IncreaseFontSize(plot->xAxis->labelFont(), 3, 6);
+    QFont tickLabelFont = IncreaseFontSize(plot->xAxis->tickLabelFont(), 2, 4);
+    QFont titleFont(QStringLiteral("Sans Serif"), 15, QFont::Bold);
 
-    if (ownedApp)
+    plot->xAxis->setLabelFont(axisLabelFont);
+    plot->yAxis->setLabelFont(axisLabelFont);
+    plot->xAxis->setTickLabelFont(tickLabelFont);
+    plot->yAxis->setTickLabelFont(tickLabelFont);
+    plot->xAxis->setTickLabelRotation(45.0);
+
+    auto xTicker = QSharedPointer<QCPAxisTickerDateTime>(new QCPAxisTickerDateTime);
+    xTicker->setDateTimeFormat(QStringLiteral("HH:mm:ss.zzz"));
+    xTicker->setTickCount(12);
+    plot->xAxis->setTicker(xTicker);
+
+    auto yTicker = QSharedPointer<QCPAxisTicker>(new QCPAxisTicker);
+    yTicker->setTickCount(12);
+    plot->yAxis->setTicker(yTicker);
+
+    plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+    plot->axisRect()->setRangeDrag(Qt::Horizontal | Qt::Vertical);
+    plot->axisRect()->setRangeZoom(Qt::Horizontal | Qt::Vertical);
+
+    plot->legend->setVisible(true);
+    plot->legend->setBorderPen(QPen(QColor(30, 30, 30, 200), 1));
+    plot->legend->setBrush(QBrush(QColor(255, 255, 255, 240)));
+    plot->legend->setFont(axisLabelFont);
+    plot->legend->setIconSize(26, 12);
+    plot->legend->setIconTextPadding(8);
+    plot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignTop | Qt::AlignRight);
+
+    plot->plotLayout()->insertRow(0);
+    plot->plotLayout()->addElement(0, 0, new QCPTextElement(plot, BuildTitle(telemetry.metadata), titleFont));
+
+    if (hasData)
     {
-        ownedApp->exec();
+        ExpandRange(minX, maxX);
+        ExpandRange(minY, maxY);
+        plot->xAxis->setRange(minX, maxX);
+        plot->yAxis->setRange(minY, maxY);
     }
     else
     {
-        plot->replot();
+        plot->xAxis->setRange(0.0, 1.0);
+        plot->yAxis->setRange(0.0, 1.0);
     }
+
+    window.show();
+    app.exec();
 }
