@@ -13,10 +13,12 @@ set_target_properties(${TELEMETRY_PLOTTING_LIB_NAME} PROPERTIES
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS OFF)
 
+include(AddSciplot)
 target_link_libraries(${TELEMETRY_PLOTTING_LIB_NAME}
         PUBLIC
                 ${PROJECT_NAME}::TelemetryLib
         PRIVATE
-                ${PROJECT_NAME}_ProjectSettings)
+                ${PROJECT_NAME}_ProjectSettings
+                sciplot::sciplot)
 
 target_include_directories(${TELEMETRY_PLOTTING_LIB_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

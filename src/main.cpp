@@ -1,6 +1,7 @@
 #include <CLI/CLI.hpp>
 
 #include <TelemetryViewer/Telemetry/TelemetryParser.hpp>
+#include <TelemetryViewer/TelemetryPlotting/TelemetryPlotter.hpp>
 
 using namespace TelemetryViewer;
 
@@ -48,4 +49,6 @@ int main(int argc, char* argv[])
     std::cout << telemetry.metadata.index << '\n';
     std::cout << telemetry.metadata.unit << '\n';
     std::cout << telemetry.metadata.name << std::endl;
+
+    TelemetryPlotter plotter;
 }
