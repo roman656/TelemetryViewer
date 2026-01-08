@@ -6,10 +6,7 @@
 namespace TelemetryViewer
 {
 
-class TelemetryPlotter final
-{
-
-};
+void PlotTelemetry(const Telemetry& telemetry);
 
 }
 

@@ -50,5 +50,5 @@ int main(int argc, char* argv[])
     std::cout << telemetry.metadata.unit << '\n';
     std::cout << telemetry.metadata.name << std::endl;
 
-    TelemetryPlotter plotter;
+    PlotTelemetry(telemetry);
 }

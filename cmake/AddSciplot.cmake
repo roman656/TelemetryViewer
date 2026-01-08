@@ -24,3 +24,6 @@ if(NOT TARGET sciplot::sciplot)
                 "   - sciplot\n")
     endif()
 endif()
+
+# Runtime dependency for sciplot
+find_package(Gnuplot REQUIRED)
