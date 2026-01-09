@@ -10,10 +10,9 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS OFF)
 
-include(AddCLI11)
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         ${PROJECT_NAME}::TelemetryPlottingLib
         ${PROJECT_NAME}_ProjectSettings
-        CLI11::CLI11)
+        Qt6::Widgets)
 
 target_compile_definitions(${EXECUTABLE_NAME} PRIVATE TELEMETRY_VIEWER_VERSION="${PROJECT_VERSION}")

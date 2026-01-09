@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <limits>
 
-#include <QApplication>
 #include <QBrush>
 #include <QColor>
+#include <QCoreApplication>
 #include <QDateTime>
 #include <QFont>
 #include <QMainWindow>
@@ -141,17 +141,16 @@ bool FillSeriesData(const Telemetry& telemetry, QVector<double>& xValues, QVecto
 
 void TelemetryViewer::PlotTelemetry(const Telemetry& telemetry)
 {
-    int argc = 1;
-    char appName[] = "TelemetryViewer";
-    char* argv[] = { appName, nullptr };
-    QApplication app(argc, argv);
+    auto* window = new QMainWindow();
+    window->setAttribute(Qt::WA_DeleteOnClose);
+    const QString appTitle = QCoreApplication::applicationName().isEmpty()
+            ? QStringLiteral("TelemetryViewer")
+            : QCoreApplication::applicationName();
+    window->setWindowTitle(appTitle);
 
-    QMainWindow window;
-    window.setWindowTitle(QStringLiteral("TelemetryViewer"));
-
-    auto* plot = new QCustomPlot(&window);
-    window.setCentralWidget(plot);
-    window.resize(1200, 700);
+    auto* plot = new QCustomPlot(window);
+    window->setCentralWidget(plot);
+    window->resize(1200, 700);
 
     QVector<double> xValues;
     QVector<double> yValues;
@@ -220,6 +219,5 @@ void TelemetryViewer::PlotTelemetry(const Telemetry& telemetry)
         plot->yAxis->setRange(0.0, 1.0);
     }
 
-    window.show();
-    app.exec();
+    window->show();
 }

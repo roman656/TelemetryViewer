@@ -7,8 +7,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(qcustomplot)
 
 add_library(qcustomplot STATIC
-        ${qcustomplot_SOURCE_DIR}/qcustomplot.cpp
-        ${qcustomplot_SOURCE_DIR}/qcustomplot.h)
+        "${qcustomplot_SOURCE_DIR}/qcustomplot.cpp"
+        "${qcustomplot_SOURCE_DIR}/qcustomplot.h")
 add_library(QCustomPlot::QCustomPlot ALIAS qcustomplot)
 
 set_target_properties(qcustomplot PROPERTIES
