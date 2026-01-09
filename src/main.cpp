@@ -1,21 +1,56 @@
+#include <filesystem>
 #include <fstream>
 
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QFileInfo>
 
 #include <TelemetryViewer/Telemetry/TelemetryParser.hpp>
 #include <TelemetryViewer/TelemetryPlotting/TelemetryPlotter.hpp>
 
 using namespace TelemetryViewer;
 
+namespace
+{
+
+[[nodiscard]]
+std::filesystem::path ParseTelemetryPathFromCliOrExit(const QApplication& application);
+
+}
+
+
+
 int main(int argc, char* argv[])
 {
-    QApplication app { argc, argv };
+    QApplication application { argc, argv };
 
     QApplication::setApplicationName(QStringLiteral("TelemetryViewer"));
     QApplication::setApplicationVersion(QStringLiteral(TELEMETRY_VIEWER_VERSION));
 
+    const std::filesystem::path telemetryFilePath = ParseTelemetryPathFromCliOrExit(application);
+    std::ifstream telemetryFile { telemetryFilePath };
+
+    if (!telemetryFile.is_open())
+    {
+        qCritical().noquote() << QStringLiteral("[main]: failed to open file \"%1\". Exiting...")
+                .arg(QString::fromStdString(telemetryFilePath.string()));
+
+        return 2;
+    }
+
+    const Telemetry telemetry = ParseTelemetry(telemetryFile);
+
+    PlotTelemetry(telemetry);
+
+    return QApplication::exec();
+}
+
+
+
+namespace
+{
+
+std::filesystem::path ParseTelemetryPathFromCliOrExit(const QApplication& application)
+{
     QCommandLineParser cliParser;
 
     cliParser.setApplicationDescription(
@@ -24,7 +59,7 @@ int main(int argc, char* argv[])
     cliParser.addVersionOption();
     cliParser.addPositionalArgument(QStringLiteral("telemetry_file"), QStringLiteral("Path to telemetry file."));
 
-    cliParser.process(app);
+    cliParser.process(application);
 
     const QStringList positionalArgs = cliParser.positionalArguments();
 
@@ -34,31 +69,9 @@ int main(int argc, char* argv[])
         cliParser.showHelp(1);
     }
 
-    const QFileInfo telemetryFileInfo { positionalArgs.front() };
+    const std::filesystem::path telemetryFilePath = positionalArgs.front().toStdString();
 
-    if (!telemetryFileInfo.exists() || !telemetryFileInfo.isFile())
-    {
-        qCritical().noquote() <<
-                QStringLiteral("[main]: telemetry file \"%1\" does not exist or is not a file. Exiting...")
-                .arg(telemetryFileInfo.filePath());
+    return telemetryFilePath;
+}
 
-        return 2;
-    }
-
-    const std::filesystem::path telemetryFilePath = telemetryFileInfo.filePath().toStdString();
-    std::ifstream telemetryFile { telemetryFilePath };
-
-    if (!telemetryFile.is_open())
-    {
-        qCritical().noquote() << QStringLiteral("[main]: failed to open file \"%1\". Exiting...")
-                .arg(QString::fromStdString(telemetryFilePath.string()));
-
-        return 3;
-    }
-
-    const Telemetry telemetry = ParseTelemetry(telemetryFile);
-
-    PlotTelemetry(telemetry);
-
-    return QApplication::exec();
 }
