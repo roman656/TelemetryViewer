@@ -12,6 +12,10 @@ using namespace TelemetryViewer;
 namespace
 {
 
+/// \brief Функция парсит путь к файлу телеметрии из аргументов командной строки
+/// \param application Приложение Qt с аргументами командной строки
+/// \returns Путь к файлу телеметрии
+/// \details При отсутствии аргументов выводит справку и завершает работу
 [[nodiscard]]
 std::filesystem::path ParseTelemetryPathFromCliOrExit(const QApplication& application);
 
