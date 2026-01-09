@@ -6,6 +6,8 @@
 namespace TelemetryViewer
 {
 
+/// \brief Функция отрисовки графика телеметрии в отдельном окне
+/// \param telemetry Телеметрия, которую нужно отобразить
 void PlotTelemetry(const Telemetry& telemetry);
 
 }
