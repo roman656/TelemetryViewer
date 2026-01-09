@@ -31,13 +31,13 @@ cmake --build build --parallel
 Приложение запускается из консоли и принимает один обязательный аргумент: путь до файла телеметрии
 
 ```bash
-./build/TelemetryViewer /path/to/TelemetryData.txt
+./build/src/TelemetryViewer /path/to/TelemetryData.txt
 ```
 
 Для вывода справки по использованию следует передать `-h` или `--help`
 
 ```bash
-./build/TelemetryViewer --help
+./build/src/TelemetryViewer --help
 ```
 
 ## Формат файла телеметрии
