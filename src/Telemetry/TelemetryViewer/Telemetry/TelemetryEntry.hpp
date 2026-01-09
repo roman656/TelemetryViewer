@@ -11,7 +11,7 @@ namespace TelemetryViewer
 struct TelemetryEntry final
 {
     std::string timeString;         ///< Время регистрации значения в текстовом формате
-    std::uint64_t timestamp = 0;    ///< Время регистрации значения в миллисекундах от базового времени
+    std::uint64_t timestamp = 0;    ///< Время регистрации значения в миллисекундах
     std::uint32_t valueCode = 0;    ///< Код значения
     double value = 0.0;             ///< Значение в размерности физической величины
 };
