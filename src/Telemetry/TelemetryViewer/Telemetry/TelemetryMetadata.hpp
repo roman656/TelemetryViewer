@@ -15,4 +15,5 @@ struct TelemetryMetadata final
 };
 
 }
+
 #endif // TELEMETRYVIEWER_TELEMETRY_TELEMETRYMETADATA_HPP
