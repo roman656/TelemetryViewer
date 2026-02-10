@@ -134,7 +134,7 @@ void TelemetryViewer::PlotTelemetry(const Telemetry& telemetry)
     plot->xAxis->setTickLabelFont(tickLabelFont);
     plot->yAxis->setTickLabelFont(tickLabelFont);
 
-    plot->xAxis->setTickLabelRotation(Constants::AxisLabelRotationDegrees);
+    plot->xAxis->setTickLabelRotation(Constants::XAxisLabelRotationDegrees);
 
     const auto xTicker = QSharedPointer<QCPAxisTickerDateTime>::create();
     const auto yTicker = QSharedPointer<QCPAxisTicker>::create();
